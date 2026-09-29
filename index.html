@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Feliz Dia de los Hot Wheels</title>
+
+  <!-- Fuentes tipográficas -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: #020205;
+      color: #00f0ff;
+      font-family: 'Orbitron', -apple-system, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* PANTALLA INICIAL */
+    #pantalla-inicio {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, #11141c 0%, #020205 100%);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    #pantalla-inicio.oculto {
+      opacity: 0;
+      transform: scale(1.15);
+      pointer-events: none;
+    }
+
+    .mensaje-inicial {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .mensaje-inicial h2 {
+      font-size: clamp(1rem, 2.8vw, 1.6rem);
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px rgba(148, 163, 184, 0.4);
+      margin-bottom: 12px;
+    }
+
+    .mensaje-inicial p {
+      font-size: clamp(1.2rem, 3.8vw, 2.2rem);
+      font-weight: 900;
+      color: #f8fafc;
+      letter-spacing: 4px;
+      text-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 0 30px #00f0ff;
+    }
+
+    .btn-descubrir {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1.8px solid #00f0ff;
+      border-radius: 30px;
+      padding: 12px 45px;
+      color: #00f0ff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.35), inset 0 0 15px rgba(0, 240, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .btn-descubrir:hover {
+      background: #00f0ff;
+      color: #020205;
+      box-shadow: 0 0 30px #00f0ff, 0 0 50px rgba(0, 240, 255, 0.6);
+      transform: scale(1.05);
+    }
+
+    /* INTERFAZ SUPERIOR E INFERIOR */
+    #interfaz-universo {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 25px 20px 15px;
+      text-align: center;
+    }
+
+    .header-universo h1 {
+      font-size: clamp(1.5rem, 4.8vw, 2.8rem);
+      font-weight: 900;
+      color: #f1f5f9;
+      letter-spacing: 3px;
+      text-shadow: 0 0 12px rgba(255, 255, 255, 0.6), 0 0 25px #00f0ff;
+    }
+
+    .header-universo p {
+      font-size: clamp(0.65rem, 1.8vw, 0.9rem);
+      color: #94a3b8;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-top: 6px;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+    }
+
+    .acciones-inferiores {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      pointer-events: auto;
+      margin-bottom: 5px;
+    }
+
+    .btn-mensaje {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1.5px solid #64748b;
+      border-radius: 25px;
+      padding: 10px 30px;
+      color: #e2e8f0;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(100, 116, 139, 0.3);
+      backdrop-filter: blur(5px);
+      transition: all 0.3s ease;
+    }
+
+    .btn-mensaje:hover {
+      background: #334155;
+      border-color: #00f0ff;
+      color: #00f0ff;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
+      transform: scale(1.05);
+    }
+
+    .footer-universo {
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      color: #64748b;
+      text-transform: uppercase;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      text-shadow: 0 0 5px rgba(0,0,0,0.8);
+    }
+
+    /* MODAL DE MENSAJE ESPECIAL */
+    #modal-mensaje {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(2, 6, 23, 0.88);
+      backdrop-filter: blur(10px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .caja-mensaje {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 1.5px solid #475569;
+      border-radius: 18px;
+      max-width: 520px;
+      width: 100%;
+      padding: 35px 30px;
+      text-align: center;
+      box-shadow: 0 0 35px rgba(0, 240, 255, 0.25), inset 0 0 20px rgba(255, 255, 255, 0.05);
+      animation: zoomIn 0.35s ease forwards;
+    }
+
+    @keyframes zoomIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .caja-mensaje h3 {
+      font-family: 'Orbitron', sans-serif;
+      color: #00f0ff;
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+      margin-bottom: 18px;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+    }
+
+    .caja-mensaje p {
+      font-family: 'Rajdhani', sans-serif;
+      color: #cbd5e1;
+      font-size: 1.25rem;
+      line-height: 1.6;
+      font-weight: 600;
+      margin-bottom: 25px;
+    }
+
+    .caja-mensaje .firma {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.95rem;
+      color: #f8fafc;
+      letter-spacing: 2px;
+      margin-bottom: 25px;
+      display: block;
+      font-weight: 700;
+    }
+
+    .btn-cerrar {
+      background: #334155;
+      border: 1px solid #64748b;
+      border-radius: 20px;
+      padding: 10px 35px;
+      color: #f8fafc;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .btn-cerrar:hover {
+      background: #00f0ff;
+      color: #020205;
+      box-shadow: 0 0 15px #00f0ff;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      cursor: grab;
+    }
+
+    #canvas-container:active {
+      cursor: grabbing;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ELEMENTO DE AUDIO -->
+  <audio id="musicaFondo" src="musica.mp3" preload="auto" loop></audio>
+
+  <!-- PANTALLA 1: INICIAL -->
+  <section id="pantalla-inicio">
+    <div class="mensaje-inicial">
+      <h2>A TI TE GUSTAN LAS MOTOS</h2>
+      <p>A MI ME GUSTAS TU</p>
+    </div>
+    <button class="btn-descubrir" id="btnDescubrir">DESCUBRIR</button>
+  </section>
+
+  <!-- PANTALLA 2: INTERFAZ SUPERIOR E INFERIOR -->
+  <div id="interfaz-universo">
+    <header class="header-universo">
+      <h1>Feliz Dia de los Hot Wheels</h1>
+      <p>PARA ALGUIEN MUY ESPECIAL</p>
+    </header>
+
+    <div class="acciones-inferiores">
+      <button class="btn-mensaje" id="btnAbrirMensaje">⚡ Abrir Mensaje Especial</button>
+      <footer class="footer-universo">
+        DESLIZA PARA ROTAR LA GALAXIA
+      </footer>
+    </div>
+  </div>
+
+  <!-- MODAL DE MENSAJE -->
+  <div id="modal-mensaje">
+    <div class="caja-mensaje">
+      <h3>🏁 RUTA HACIA EL DESTINO 🏁</h3>
+      <p>
+        "Entre millones de kilómetros y máquinas de alta potencia, 
+        no hay mejor copiloto ni mejor lugar para acelerar que a tu lado."
+      </p>
+      <span class="firma">FELIZ DÍA • MI DESTINO FAVORITO</span>
+      <button class="btn-cerrar" id="btnCerrarMensaje">CERRAR</button>
+    </div>
+  </div>
+
+  <div id="canvas-container"></div>
+
+  <script>
+    const btnDescubrir = document.getElementById('btnDescubrir');
+    const pantallaInicio = document.getElementById('pantalla-inicio');
+    const interfazUniverso = document.getElementById('interfaz-universo');
+    const container = document.getElementById('canvas-container');
+    const audio = document.getElementById('musicaFondo');
+
+    // Manejo del modal
+    const btnAbrirMensaje = document.getElementById('btnAbrirMensaje');
+    const btnCerrarMensaje = document.getElementById('btnCerrarMensaje');
+    const modalMensaje = document.getElementById('modal-mensaje');
+
+    btnAbrirMensaje.addEventListener('click', () => { modalMensaje.style.display = 'flex'; });
+    btnCerrarMensaje.addEventListener('click', () => { modalMensaje.style.display = 'none'; });
+
+    let scene, camera, renderer, universeGroup, galaxyStars;
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+    let targetRotationY = 0;
+    let targetRotationX = 0;
+
+    // Lista de motos
+    const bikeList = [
+      { name: "DUCATI PANIGALE V4", file: "img/ducati.png", glowColor: "#00f0ff", baseColor: "#e50914" },
+      { name: "BMW S 1000 RR", file: "img/s1000rr.png", glowColor: "#ffffff", baseColor: "#cbd5e1" },
+      { name: "KTM 1390 SUPER DUKE", file: "img/ktm1390.png", glowColor: "#ff4400", baseColor: "#ff3300" },
+      { name: "KAWASAKI NINJA H2R", file: "img/ninjah2r.png", glowColor: "#00ff66", baseColor: "#00ff33" },
+      { name: "KTM 1290 SUPER DUKE", file: "img/ktm1290.png", glowColor: "#ff5500", baseColor: "#ff4400" },
+      { name: "YAMAHA YZF-R1", file: "img/r1.png", glowColor: "#00f0ff", baseColor: "#0033cc" }
+    ];
+
+    // Frases más grandes y legibles
+    const wordsList = [
+      { text: "MI COPILOTO", color: "#38bdf8", icon: "⚡" },
+      { text: "VELOCIDAD", color: "#f8fafc", icon: "✦" },
+      { text: "PODER TOTAL", color: "#00f0ff", icon: "🏁" },
+      { text: "MI DESTINO", color: "#38bdf8", icon: "✦" },
+      { text: "LIBERTAD", color: "#f8fafc", icon: "✦" },
+      { text: "METAS", color: "#00f0ff", icon: "✦" },
+      { text: "CAMPEÓN", color: "#e2e8f0", icon: "👑" },
+      { text: "SUEÑOS", color: "#38bdf8", icon: "✦" },
+      { text: "TURBO", color: "#00f0ff", icon: "⚡" },
+      { text: "ETERNIDAD", color: "#f8fafc", icon: "✦" },
+      { text: "PASIÓN", color: "#38bdf8", icon: "✦" },
+      { text: "300 KM/H", color: "#00f0ff", icon: "💨" },
+      { text: "ÚNICO", color: "#f8fafc", icon: "✦" }
+    ];
+
+    // Procesador de silueta neón en PNGs
+    function processImageWithNeonGlow(image, glowColor) {
+      const c = document.createElement('canvas');
+      c.width = 640;
+      c.height = 420;
+      const ctx = c.getContext('2d');
+
+      const dWidth = 560;
+      const dHeight = 330;
+      const dx = (c.width - dWidth) / 2;
+      const dy = 25;
+
+      ctx.save();
+      ctx.shadowColor = glowColor;
+      ctx.shadowBlur = 24;
+      for (let i = 0; i < 3; i++) {
+        ctx.drawImage(image, dx, dy, dWidth, dHeight);
+      }
+      ctx.restore();
+
+      ctx.drawImage(image, dx, dy, dWidth, dHeight);
+      return new THREE.CanvasTexture(c);
+    }
+
+    // Respaldo HD
+    function createFallbackNeonBike(model) {
+      const c = document.createElement('canvas');
+      c.width = 640;
+      c.height = 420;
+      const ctx = c.getContext('2d');
+
+      function drawWheel(cx, cy, r) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = "#090d16";
+        ctx.fill();
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = model.glowColor;
+        ctx.shadowColor = model.glowColor;
+        ctx.shadowBlur = 15;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 0.65, 0, Math.PI * 2);
+        ctx.strokeStyle = "#475569";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 0.22, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+        ctx.restore();
+      }
+
+      drawWheel(140, 240, 65);
+      drawWheel(500, 240, 65);
+
+      ctx.fillStyle = "#1e293b";
+      ctx.beginPath();
+      ctx.moveTo(140, 240);
+      ctx.lineTo(300, 230);
+      ctx.lineTo(330, 155);
+      ctx.lineTo(220, 165);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#64748b";
+      ctx.beginPath();
+      ctx.moveTo(270, 250);
+      ctx.lineTo(400, 220);
+      ctx.lineTo(420, 200);
+      ctx.lineTo(290, 230);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = model.baseColor;
+      ctx.shadowColor = model.glowColor;
+      ctx.shadowBlur = 25;
+      ctx.beginPath();
+      ctx.moveTo(130, 140);
+      ctx.lineTo(210, 100);
+      ctx.lineTo(320, 110);
+      ctx.lineTo(380, 150);
+      ctx.lineTo(500, 120);
+      ctx.lineTo(540, 170);
+      ctx.lineTo(430, 220);
+      ctx.lineTo(300, 225);
+      ctx.lineTo(180, 185);
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+      ctx.roundRect(80, 340, 480, 48, 14);
+      ctx.fill();
+      ctx.strokeStyle = "#475569";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = "#f8fafc";
+      ctx.font = "bold 24px 'Orbitron', monospace";
+      ctx.textAlign = "center";
+      ctx.shadowColor = model.glowColor;
+      ctx.shadowBlur = 8;
+      ctx.fillText(model.name, 320, 373);
+
+      return new THREE.CanvasTexture(c);
+    }
+
+    function initUniverse() {
+      scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x020205, 0.0009);
+
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 3500);
+      camera.position.set(0, 45, 540);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      universeGroup = new THREE.Group();
+      scene.add(universeGroup);
+
+      // 1. GENERACIÓN DE GALAXIA ESPIRAL REALISTA (8,000 PARTÍCULAS EN 3 BRAZOS)
+      const particleCount = 8000;
+      const positions = new Float32Array(particleCount * 3);
+      const colors = new Float32Array(particleCount * 3);
+      const branches = 3;
+      const radius = 380;
+      const spin = 1.3;
+
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        const r = Math.pow(Math.random(), 2.2) * radius;
+        const spinAngle = r * spin * 0.01;
+        const branchAngle = ((i % branches) / branches) * Math.PI * 2;
+
+        const randomX = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 35) * (r / radius + 0.2);
+        const randomY = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 20) * (r / radius + 0.2);
+        const randomZ = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 35) * (r / radius + 0.2);
+
+        positions[i3] = Math.cos(branchAngle + spinAngle) * r + randomX;
+        positions[i3 + 1] = randomY;
+        positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * r + randomZ;
+
+        // Color degradado: centro blanco/platino -> brazos cian/gris cósmico
+        const mixedColor = new THREE.Color();
+        const coreColor = new THREE.Color("#ffffff");
+        const outerColor = new THREE.Color(r < 180 ? "#00f0ff" : "#475569");
+        mixedColor.lerpColors(coreColor, outerColor, r / radius);
+
+        colors[i3] = mixedColor.r;
+        colors[i3 + 1] = mixedColor.g;
+        colors[i3 + 2] = mixedColor.b;
+      }
+
+      const galaxyGeometry = new THREE.BufferGeometry();
+      galaxyGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      galaxyGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      const galaxyMaterial = new THREE.PointsMaterial({
+        size: 2.4,
+        sizeAttenuation: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.9
+      });
+
+      galaxyStars = new THREE.Points(galaxyGeometry, galaxyMaterial);
+      galaxyStars.rotation.x = Math.PI / 3.8;
+      universeGroup.add(galaxyStars);
+
+      // 2. MOTOS EN ÓRBITA TRIDIMENSIONAL
+      const totalBikes = 18;
+      for (let i = 0; i < totalBikes; i++) {
+        const model = bikeList[i % bikeList.length];
+
+        const phi = Math.acos(-1 + (2 * i) / totalBikes);
+        const theta = Math.sqrt(totalBikes * Math.PI) * phi;
+        const bRadius = 240 + (i % 3) * 40;
+        const posX = bRadius * Math.cos(theta) * Math.sin(phi);
+        const posY = bRadius * Math.sin(theta) * Math.sin(phi) * 0.45;
+        const posZ = bRadius * Math.cos(phi);
+
+        const fallbackTex = createFallbackNeonBike(model);
+        const mat = new THREE.SpriteMaterial({ map: fallbackTex, transparent: true, depthWrite: false });
+        const sprite = new THREE.Sprite(mat);
+        sprite.position.set(posX, posY, posZ);
+        sprite.scale.set(155, 102, 1);
+        universeGroup.add(sprite);
+
+        const img = new Image();
+        img.src = model.file;
+        img.onload = () => {
+          const neonTex = processImageWithNeonGlow(img, model.glowColor);
+          sprite.material.map = neonTex;
+          sprite.material.needsUpdate = true;
+        };
+      }
+
+      // 3. FRASES EN TAMAÑO GRANDE
+      for (let i = 0; i < 28; i++) {
+        const item = wordsList[i % wordsList.length];
+        const c = document.createElement('canvas');
+        c.width = 380;
+        c.height = 90;
+        const ctx = c.getContext('2d');
+
+        // Cápsula gris oscura
+        ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+        ctx.roundRect(10, 10, 360, 70, 20);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(100, 116, 139, 0.6)";
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        ctx.fillStyle = item.color;
+        ctx.font = "bold 28px 'Rajdhani', sans-serif";
+        ctx.textAlign = "center";
+        ctx.shadowColor = item.color;
+        ctx.shadowBlur = 12;
+        ctx.fillText(item.icon + "  " + item.text, 190, 53);
+
+        const wordTex = new THREE.CanvasTexture(c);
+        const wordMat = new THREE.SpriteMaterial({ map: wordTex, transparent: true, depthWrite: false });
+        const sprite = new THREE.Sprite(wordMat);
+
+        const wRadius = 120 + Math.random() * 260;
+        const wAngle = Math.random() * Math.PI * 2;
+        sprite.position.set(
+          Math.cos(wAngle) * wRadius,
+          (Math.random() - 0.5) * 220,
+          Math.sin(wAngle) * wRadius
+        );
+        sprite.scale.set(65, 16, 1);
+        universeGroup.add(sprite);
+      }
+
+      setupControls();
+      animate();
+    }
+
+    function setupControls() {
+      const onPointerDown = (e) => {
+        isDragging = true;
+        previousMousePosition = {
+          x: e.clientX || (e.touches && e.touches[0].clientX),
+          y: e.clientY || (e.touches && e.touches[0].clientY)
+        };
+      };
+
+      const onPointerMove = (e) => {
+        if (!isDragging) return;
+        const currentX = e.clientX || (e.touches && e.touches[0].clientX);
+        const currentY = e.clientY || (e.touches && e.touches[0].clientY);
+
+        targetRotationY += (currentX - previousMousePosition.x) * 0.005;
+        targetRotationX += (currentY - previousMousePosition.y) * 0.003;
+
+        previousMousePosition = { x: currentX, y: currentY };
+      };
+
+      const onPointerUp = () => { isDragging = false; };
+
+      window.addEventListener('mousedown', onPointerDown);
+      window.addEventListener('mousemove', onPointerMove);
+      window.addEventListener('mouseup', onPointerUp);
+
+      window.addEventListener('touchstart', onPointerDown, { passive: true });
+      window.addEventListener('touchmove', onPointerMove, { passive: true });
+      window.addEventListener('touchend', onPointerUp);
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      if (!isDragging) {
+        targetRotationY += 0.0015;
+      }
+
+      universeGroup.rotation.y += (targetRotationY - universeGroup.rotation.y) * 0.08;
+      universeGroup.rotation.x += (targetRotationX - universeGroup.rotation.x) * 0.08;
+
+      if (galaxyStars) {
+        galaxyStars.rotation.z += 0.0008;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    btnDescubrir.addEventListener('click', () => {
+      audio.play().catch(() => {});
+
+      pantallaInicio.classList.add('oculto');
+      setTimeout(() => {
+        pantallaInicio.style.display = 'none';
+        interfazUniverso.style.display = 'flex';
+        initUniverse();
+      }, 700);
+    });
+  </script>
+</body>
+</html>
