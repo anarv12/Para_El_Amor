@@ -150,21 +150,14 @@
       margin-bottom: 5px;
     }
 
-    .fila-botones {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
     .btn-mensaje {
       background: rgba(30, 41, 59, 0.7);
       border: 1.5px solid #64748b;
       border-radius: 25px;
-      padding: 10px 24px;
+      padding: 10px 30px;
       color: #e2e8f0;
       font-family: 'Rajdhani', sans-serif;
-      font-size: 1.05rem;
+      font-size: 1.1rem;
       font-weight: 700;
       letter-spacing: 2px;
       cursor: pointer;
@@ -179,41 +172,6 @@
       color: #00f0ff;
       box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
       transform: scale(1.05);
-    }
-
-    /* BOTÓN NUESTRO LUGAR DESTACADO */
-    .btn-nuestro-lugar {
-      background: rgba(0, 240, 255, 0.15);
-      border: 1.8px solid #00f0ff;
-      border-radius: 25px;
-      padding: 10px 26px;
-      color: #ffffff;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.9rem;
-      font-weight: 800;
-      letter-spacing: 2px;
-      cursor: pointer;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.5), inset 0 0 10px rgba(0, 240, 255, 0.3);
-      backdrop-filter: blur(5px);
-      animation: pulsoNeon 2s infinite ease-in-out;
-      transition: all 0.3s ease;
-    }
-
-    @keyframes pulsoNeon {
-      0%, 100% {
-        box-shadow: 0 0 15px rgba(0, 240, 255, 0.4), inset 0 0 10px rgba(0, 240, 255, 0.2);
-        transform: scale(1);
-      }
-      50% {
-        box-shadow: 0 0 30px rgba(0, 240, 255, 0.9), inset 0 0 20px rgba(0, 240, 255, 0.5);
-        transform: scale(1.05);
-      }
-    }
-
-    .btn-nuestro-lugar:hover {
-      background: #00f0ff;
-      color: #010103;
-      box-shadow: 0 0 40px #00f0ff;
     }
 
     .footer-universo {
@@ -407,12 +365,9 @@
     </header>
 
     <div class="acciones-inferiores">
-      <div class="fila-botones">
-        <button class="btn-mensaje" id="btnAbrirMensaje">⚡ Mensaje Especial</button>
-        <button class="btn-nuestro-lugar" id="btnAbrirLugar">✦ NUESTRO LUGAR ✦</button>
-      </div>
+      <button class="btn-mensaje" id="btnAbrirMensaje">⚡ Abrir Mensaje Especial</button>
       <footer class="footer-universo">
-        DESLIZA PARA ROTAR LA GALAXIA
+        DESLIZA PARA ROTAR • TOCA EL CENTRO
       </footer>
     </div>
   </div>
@@ -424,7 +379,7 @@
       <p>
         "Me encanta tu mundo, me encantan tus gustos y, sobre todo, me encantas tú. No soy de hacer estas cosas, pero contigo todo me nace muy fácil. Quería regalarte un pedacito de tu propio universo hoy. Feliz día de los Hot Wheels ✨"
       </p>
-      <span class="firma">MI DESTINO FAVORITO</span>
+      <span class="firma">FELIZ DÍA • MI DESTINO FAVORITO</span>
       <button class="btn-cerrar" id="btnCerrarMensaje">CERRAR</button>
     </div>
   </div>
@@ -459,11 +414,9 @@
 
     const modalSecreto = document.getElementById('modal-secreto');
     const btnCerrarSecreto = document.getElementById('btnCerrarSecreto');
-    const btnAbrirLugar = document.getElementById('btnAbrirLugar');
 
     btnAbrirMensaje.addEventListener('click', () => { modalMensaje.style.display = 'flex'; });
     btnCerrarMensaje.addEventListener('click', () => { modalMensaje.style.display = 'none'; });
-    btnAbrirLugar.addEventListener('click', () => { modalSecreto.style.display = 'flex'; });
     btnCerrarSecreto.addEventListener('click', () => { modalSecreto.style.display = 'none'; });
 
     let scene, camera, renderer, universeGroup;
@@ -493,7 +446,7 @@
     ];
 
     const wordsList = [
-      { text: "MI PILOTO", color: "#38bdf8", icon: "⚡" },
+      { text: "MI COPILOTO", color: "#38bdf8", icon: "⚡" },
       { text: "VELOCIDAD", color: "#f8fafc", icon: "✦" },
       { text: "PODER TOTAL", color: "#00f0ff", icon: "🏁" },
       { text: "MI DESTINO", color: "#38bdf8", icon: "✦" },
@@ -741,25 +694,22 @@
       const bgMat = new THREE.PointsMaterial({ size: 2.2, color: 0x94a3b8, transparent: true, opacity: 0.7 });
       universeGroup.add(new THREE.Points(bgGeo, bgMat));
 
-      // CARTEL 3D NOTORIO DE "NUESTRO LUGAR" (ALTA RESOLUCIÓN Y ESCALA)
+      // CARTEL 3D NOTORIO DE "NUESTRO LUGAR"
       const secretCanvas = document.createElement('canvas');
       secretCanvas.width = 720;
       secretCanvas.height = 180;
       const sCtx = secretCanvas.getContext('2d');
 
-      // Fondo oscuro con brillo cian
       sCtx.fillStyle = "rgba(10, 18, 30, 0.9)";
       sCtx.roundRect(15, 15, 690, 150, 45);
       sCtx.fill();
 
-      // Borde doble de neón
       sCtx.strokeStyle = "#00f0ff";
       sCtx.lineWidth = 6;
       sCtx.shadowColor = "#00f0ff";
       sCtx.shadowBlur = 30;
       sCtx.stroke();
 
-      // Texto grande y brillante
       sCtx.fillStyle = "#ffffff";
       sCtx.font = "900 48px 'Orbitron', sans-serif";
       sCtx.textAlign = "center";
@@ -770,8 +720,8 @@
       const secretTex = new THREE.CanvasTexture(secretCanvas);
       const secretMat = new THREE.SpriteMaterial({ map: secretTex, transparent: true, depthWrite: false });
       secretSprite = new THREE.Sprite(secretMat);
-      secretSprite.position.set(0, 25, 0); // En el centro cósmico
-      secretSprite.scale.set(160, 42, 1);  // Tamaño amplio y visible
+      secretSprite.position.set(0, 25, 0);
+      secretSprite.scale.set(160, 42, 1);
       secretSprite.userData = { isSecret: true };
       universeGroup.add(secretSprite);
 
