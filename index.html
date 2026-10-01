@@ -21,7 +21,7 @@
     }
 
     body {
-      background-color: #020205;
+      background-color: #010103;
       color: #00f0ff;
       font-family: 'Orbitron', -apple-system, sans-serif;
       overflow: hidden;
@@ -49,7 +49,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(circle at center, #11141c 0%, #020205 100%);
+      background: radial-gradient(circle at center, #11141c 0%, #010103 100%);
       transition: opacity 0.8s ease, transform 0.8s ease;
     }
 
@@ -99,7 +99,7 @@
 
     .btn-descubrir:hover {
       background: #00f0ff;
-      color: #020205;
+      color: #010103;
       box-shadow: 0 0 30px #00f0ff, 0 0 50px rgba(0, 240, 255, 0.6);
       transform: scale(1.05);
     }
@@ -324,7 +324,7 @@
 
     .btn-cerrar:hover {
       background: #00f0ff;
-      color: #020205;
+      color: #010103;
       box-shadow: 0 0 15px #00f0ff;
     }
 
@@ -419,14 +419,15 @@
     btnCerrarMensaje.addEventListener('click', () => { modalMensaje.style.display = 'none'; });
     btnCerrarSecreto.addEventListener('click', () => { modalSecreto.style.display = 'none'; });
 
-    let scene, camera, renderer, universeGroup, galaxyStars, secretSprite;
+    let scene, camera, renderer, universeGroup;
+    let mainGalaxy, subGalaxy1, subGalaxy2, secretSprite;
     let isDragging = false;
     let dragDistance = 0;
     let previousMousePosition = { x: 0, y: 0 };
     let targetRotationY = 0;
     let targetRotationX = 0;
 
-    // Variables de viaje cinemático
+    // Viaje cinemático
     let isWarping = false;
     let warpProgress = 0;
     const initialCameraZ = 2800;
@@ -568,12 +569,61 @@
       return new THREE.CanvasTexture(c);
     }
 
+    // GENERADOR DE GALAXIAS ESPIRALES PROCEDURALES
+    function createGalaxySystem({ count, radius, branches, spin, colorInside, colorOutside, size, tiltX, tiltZ, posX = 0, posY = 0, posZ = 0 }) {
+      const positions = new Float32Array(count * 3);
+      const colors = new Float32Array(count * 3);
+
+      for (let i = 0; i < count; i++) {
+        const i3 = i * 3;
+        const r = Math.pow(Math.random(), 2.0) * radius;
+        const spinAngle = r * spin * 0.01;
+        const branchAngle = ((i % branches) / branches) * Math.PI * 2;
+
+        const randomX = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 35) * (r / radius + 0.1);
+        const randomY = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 20) * (r / radius + 0.1);
+        const randomZ = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 35) * (r / radius + 0.1);
+
+        positions[i3] = Math.cos(branchAngle + spinAngle) * r + randomX;
+        positions[i3 + 1] = randomY;
+        positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * r + randomZ;
+
+        const mixedColor = new THREE.Color();
+        const coreC = new THREE.Color(colorInside);
+        const outerC = new THREE.Color(colorOutside);
+        mixedColor.lerpColors(coreC, outerC, r / radius);
+
+        colors[i3] = mixedColor.r;
+        colors[i3 + 1] = mixedColor.g;
+        colors[i3 + 2] = mixedColor.b;
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      const mat = new THREE.PointsMaterial({
+        size: size,
+        sizeAttenuation: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.95
+      });
+
+      const points = new THREE.Points(geo, mat);
+      points.rotation.x = tiltX;
+      points.rotation.z = tiltZ;
+      points.position.set(posX, posY, posZ);
+      return points;
+    }
+
     function initUniverse() {
       scene = new THREE.Scene();
-      scene.fog = new THREE.FogExp2(0x020205, 0.0006);
+      scene.fog = new THREE.FogExp2(0x010103, 0.0005);
 
-      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 5000);
-      // Inicia en el espacio profundo
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 5500);
       camera.position.set(0, 150, initialCameraZ);
 
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -584,103 +634,68 @@
       universeGroup = new THREE.Group();
       scene.add(universeGroup);
 
-      // 1. NÚCLEO GALÁCTICO BRILLANTE (AGUJERO NEGRO / NÚCLEO DE LUZ)
-      const coreCanvas = document.createElement('canvas');
-      coreCanvas.width = 256;
-      coreCanvas.height = 256;
-      const cCtx = coreCanvas.getContext('2d');
-      const grad = cCtx.createRadialGradient(128, 128, 0, 128, 128, 128);
-      grad.addColorStop(0, '#ffffff');
-      grad.addColorStop(0.2, '#00f0ff');
-      grad.addColorStop(0.5, 'rgba(0, 150, 255, 0.4)');
-      grad.addColorStop(1, 'transparent');
-      cCtx.fillStyle = grad;
-      cCtx.fillRect(0, 0, 256, 256);
-
-      const coreTex = new THREE.CanvasTexture(coreCanvas);
-      const coreMat = new THREE.SpriteMaterial({ map: coreTex, transparent: true, blending: THREE.AdditiveBlending });
-      const coreSprite = new THREE.Sprite(coreMat);
-      coreSprite.scale.set(160, 160, 1);
-      universeGroup.add(coreSprite);
-
-      // Anillos del disco de acreción
-      const ringGeo = new THREE.RingGeometry(40, 180, 64);
-      const ringMat = new THREE.MeshBasicMaterial({
-        color: 0x00f0ff,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.25,
-        wireframe: true
+      // 1. GALAXIA PRINCIPAL DE 5 BRAZOS (DENSA Y CÓSMICA)
+      mainGalaxy = createGalaxySystem({
+        count: 14000,
+        radius: 520,
+        branches: 5,
+        spin: 1.35,
+        colorInside: "#ffffff",
+        colorOutside: "#00f0ff",
+        size: 2.3,
+        tiltX: Math.PI / 3.6,
+        tiltZ: 0.2
       });
-      const accretionRing = new THREE.Mesh(ringGeo, ringMat);
-      accretionRing.rotation.x = Math.PI / 2.3;
-      universeGroup.add(accretionRing);
+      universeGroup.add(mainGalaxy);
 
-      // 2. GALAXIA ESPIRAL ULTRA-DETALLADA (14,000 PARTÍCULAS EN 4 BRAZOS)
-      const particleCount = 14000;
-      const positions = new Float32Array(particleCount * 3);
-      const colors = new Float32Array(particleCount * 3);
-      const branches = 4;
-      const radius = 480;
-      const spin = 1.4;
-
-      for (let i = 0; i < particleCount; i++) {
-        const i3 = i * 3;
-        const r = Math.pow(Math.random(), 2.0) * radius;
-        const spinAngle = r * spin * 0.01;
-        const branchAngle = ((i % branches) / branches) * Math.PI * 2;
-
-        const randomX = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 45) * (r / radius + 0.15);
-        const randomY = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 25) * (r / radius + 0.15);
-        const randomZ = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 45) * (r / radius + 0.15);
-
-        positions[i3] = Math.cos(branchAngle + spinAngle) * r + randomX;
-        positions[i3 + 1] = randomY;
-        positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * r + randomZ;
-
-        // Degradado de color: Núcleo blanco -> azul cian brillante -> gris titanio estelar
-        const mixedColor = new THREE.Color();
-        const coreColor = new THREE.Color("#ffffff");
-        const outerColor = new THREE.Color(r < 220 ? "#00f0ff" : "#64748b");
-        mixedColor.lerpColors(coreColor, outerColor, r / radius);
-
-        colors[i3] = mixedColor.r;
-        colors[i3 + 1] = mixedColor.g;
-        colors[i3 + 2] = mixedColor.b;
-      }
-
-      const galaxyGeometry = new THREE.BufferGeometry();
-      galaxyGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      galaxyGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-      const galaxyMaterial = new THREE.PointsMaterial({
-        size: 2.2,
-        sizeAttenuation: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.95
+      // 2. GALAXIA SATÉLITE 1 (FONDO SUPERIOR IZQUIERDO)
+      subGalaxy1 = createGalaxySystem({
+        count: 4500,
+        radius: 260,
+        branches: 3,
+        spin: 1.5,
+        colorInside: "#e2e8f0",
+        colorOutside: "#38bdf8",
+        size: 2.0,
+        tiltX: Math.PI / 2.2,
+        tiltZ: -0.6,
+        posX: -450,
+        posY: 180,
+        posZ: -350
       });
+      universeGroup.add(subGalaxy1);
 
-      galaxyStars = new THREE.Points(galaxyGeometry, galaxyMaterial);
-      galaxyStars.rotation.x = Math.PI / 3.8;
-      universeGroup.add(galaxyStars);
+      // 3. GALAXIA SATÉLITE 2 (FONDO INFERIOR DERECHO)
+      subGalaxy2 = createGalaxySystem({
+        count: 4000,
+        radius: 240,
+        branches: 4,
+        spin: 1.2,
+        colorInside: "#f8fafc",
+        colorOutside: "#64748b",
+        size: 1.9,
+        tiltX: Math.PI / 4,
+        tiltZ: 0.8,
+        posX: 420,
+        posY: -150,
+        posZ: -400
+      });
+      universeGroup.add(subGalaxy2);
 
-      // 3. CAMPO DE ESTRELLAS DE FONDO Y PROFUNDIDAD
-      const bgCount = 2000;
+      // 4. CAMPO ESTELAR PROFUNDO (3,500 ESTRELLAS)
+      const bgCount = 3500;
       const bgPos = new Float32Array(bgCount * 3);
       for (let i = 0; i < bgCount * 3; i += 3) {
-        bgPos[i] = (Math.random() - 0.5) * 3500;
-        bgPos[i + 1] = (Math.random() - 0.5) * 2000;
-        bgPos[i + 2] = (Math.random() - 0.5) * 3500;
+        bgPos[i] = (Math.random() - 0.5) * 4000;
+        bgPos[i + 1] = (Math.random() - 0.5) * 2500;
+        bgPos[i + 2] = (Math.random() - 0.5) * 4000;
       }
       const bgGeo = new THREE.BufferGeometry();
       bgGeo.setAttribute('position', new THREE.BufferAttribute(bgPos, 3));
-      const bgMat = new THREE.PointsMaterial({ size: 2.0, color: 0x94a3b8, transparent: true, opacity: 0.6 });
+      const bgMat = new THREE.PointsMaterial({ size: 2.2, color: 0x94a3b8, transparent: true, opacity: 0.7 });
       universeGroup.add(new THREE.Points(bgGeo, bgMat));
 
-      // 4. ELEMENTO SECRETO INTERACTIVO FLOTANTE
+      // 5. ELEMENTO SECRETO INTERACTIVO FLOTANTE
       const secretCanvas = document.createElement('canvas');
       secretCanvas.width = 380;
       secretCanvas.height = 100;
@@ -707,7 +722,7 @@
       secretSprite.userData = { isSecret: true };
       universeGroup.add(secretSprite);
 
-      // 5. MOTOS EN ÓRBITA TRIDIMENSIONAL
+      // 6. MOTOS EN ÓRBITA TRIDIMENSIONAL
       const totalBikes = 18;
       for (let i = 0; i < totalBikes; i++) {
         const model = bikeList[i % bikeList.length];
@@ -734,7 +749,7 @@
         };
       }
 
-      // 6. FRASES CÓSMICAS EN TAMAÑO GRANDE
+      // 7. FRASES CÓSMICAS EN TAMAÑO GRANDE
       for (let i = 0; i < 28; i++) {
         const item = wordsList[i % wordsList.length];
         const c = document.createElement('canvas');
@@ -840,10 +855,9 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      // Animación de viaje hiperespacial
+      // Viaje cinemático hiperespacial
       if (isWarping) {
         warpProgress += 0.012;
-        // Curva de aceleración y frenado suave (Ease Out Cubic)
         const ease = 1 - Math.pow(1 - Math.min(warpProgress, 1), 3);
         camera.position.z = initialCameraZ - (initialCameraZ - targetCameraZ) * ease;
         camera.position.y = 150 - (150 - 45) * ease;
@@ -862,9 +876,10 @@
         universeGroup.rotation.x += (targetRotationX - universeGroup.rotation.x) * 0.08;
       }
 
-      if (galaxyStars) {
-        galaxyStars.rotation.z += 0.0008;
-      }
+      // Rotación individual de cada galaxia
+      if (mainGalaxy) mainGalaxy.rotation.y += 0.001;
+      if (subGalaxy1) subGalaxy1.rotation.y += 0.0014;
+      if (subGalaxy2) subGalaxy2.rotation.y += 0.0012;
 
       if (secretSprite) {
         const time = Date.now() * 0.002;
@@ -874,14 +889,10 @@
       renderer.render(scene, camera);
     }
 
-    // ACCIÓN AL PRESIONAR DESCUBRIR
     btnDescubrir.addEventListener('click', () => {
       audio.play().catch(() => {});
 
-      // Ocultar pantalla inicial
       pantallaInicio.classList.add('oculto');
-
-      // Flash cósmico inicial
       flashWarp.style.opacity = '0.9';
       setTimeout(() => { flashWarp.style.opacity = '0'; }, 300);
 
@@ -889,7 +900,7 @@
         pantallaInicio.style.display = 'none';
         interfazUniverso.style.display = 'flex';
         initUniverse();
-        isWarping = true; // Dispara el salto hiperespacial
+        isWarping = true;
       }, 500);
     });
   </script>
